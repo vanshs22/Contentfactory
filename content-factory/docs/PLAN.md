@@ -3,7 +3,9 @@
 ## Scope and assumptions
 - Single-tenant, authenticated deployment is a later milestone; this pass hardens the core single-node factory and makes its current API honest.
 - OpenAI-compatible LLM, HyperFrames CLI, FFmpeg, Buffer, and n8n remain optional integrations; local deterministic composition and validation must work without live credentials.
-- The first shippable path is campaign -> agents -> style-aware HyperFrames composition -> render/QC -> asset URL -> optional Buffer draft.
+- User `style_prompt` is free-form; the Visual Director creates one locked style bible for the entire video and every scene repeats its continuity constraints.
+- The current HyperFrames boundary renders deterministic HTML/CSS and carries prompt-only media metadata. A real media provider can consume the same scene prompts later; no fake footage URLs are created.
+- `video_duration_sec` is exact from campaign input through script, visual timing, rendering, and QC.
 
 ## Stack decision
 - Node.js 22 + TypeScript + Express: matches the existing service and keeps the patch small.
@@ -23,7 +25,7 @@
 ## API contract
 - `GET /health`: service and integration availability.
 - `GET /styles`: public catalog of supported viral/trend-inspired style recipes.
-- `POST /campaigns`: validate and create campaign/jobs.
+- `POST /campaigns`: validate and create campaign/jobs; accepts `style_prompt` and `video_duration_sec`.
 - `GET /campaigns`, `GET /campaigns/:id`: list/detail with jobs.
 - `POST /campaigns/:id/run`, `POST /jobs/:id/run`: async execution.
 - `GET /jobs`, `GET /jobs/:id`: job status and artifacts.
@@ -36,6 +38,9 @@
 - [x] No black-slate fallback for production render failures.
 - [x] No external CDN in generated compositions.
 - [x] Deterministic style/template selection and render metadata checks.
+- [x] Arbitrary style prompts become one locked style bible reused by every scene and QC revision.
+- [x] Exact requested video duration is normalized across strategy, script, scenes, and render validation.
+- [x] Prompt-only media sidecar preserves the future generation-provider contract without inventing assets.
 - [ ] Authentication/RBAC and multi-tenant ownership.
 - [ ] Redis/Postgres queue and object storage adapter.
 - [ ] Production Buffer schema contract test with credentials.
@@ -49,12 +54,14 @@
 ## Build checklist
 - [x] Recover archived source into a normal repository layout.
 - [x] Add explicit trending-style catalog and platform adaptations.
+- [x] Accept arbitrary visual style prompts with a locked style bible and scene media prompts.
+- [x] Enforce exact video duration when requested.
 - [x] Make templates style-aware and deterministic.
 - [x] Fix volume handling, QC revision context, and render failure semantics.
 - [x] Harden persistence, config, API error handling, and n8n polling export.
 - [x] Add analytics metrics and a first learning-insight loop.
 - [x] Add tests, lockfile, CI, Docker/README consistency.
-- [ ] Run full verification and push branch/PR.
+- [x] Run full verification and push branch/PR.
 
 ## Risks and next steps
 - Viral performance cannot be guaranteed; styles are trend-inspired recipes with measurable hook/pacing rules, not claims of guaranteed virality.

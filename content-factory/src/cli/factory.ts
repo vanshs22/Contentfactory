@@ -25,6 +25,9 @@ async function main() {
       .map((s) => s.trim())
       .filter(Boolean),
     content_goal: arg("content_goal", "growth"),
+    viral_style: arg("viral_style"),
+    style_prompt: arg("style_prompt"),
+    video_duration_sec: Number(arg("video_duration_sec", "30")),
     brand: {
       name: arg("brand", "Apex Estates"),
       voice: arg("voice", "confident, data-driven, premium"),

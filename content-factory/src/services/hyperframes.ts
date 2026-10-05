@@ -43,7 +43,8 @@ function dimensions(aspect: VisualSpec["aspect"]): { width: number; height: numb
 
 /** Build a deterministic, style-aware HyperFrames composition from validated VisualSpec. */
 export function buildCompositionHtml(spec: VisualSpec, projectId: string): string {
-  const recipe = getStyleRecipe(spec.style_id);
+  const catalogStyleId = spec.style_id === "custom" ? "kinetic-captions" : spec.style_id;
+  const recipe = getStyleRecipe(catalogStyleId);
   const base = THEME_COLORS[spec.theme] ?? THEME_COLORS[recipe.theme] ?? THEME_COLORS.modern;
   const colors = {
     bg: safeColor(spec.brand_colors?.[0], base.bg),
@@ -54,6 +55,7 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
   const { width, height } = dimensions(spec.aspect);
   const duration = Math.max(1, spec.duration);
   const styleClass = recipe.id;
+  const profileClass = `profile-${spec.style_bible.profile}`;
   let elapsed = 0;
 
   const scenesHtml = spec.scenes
@@ -63,9 +65,10 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
       const sceneBg = safeColor(scene.background, colors.bg);
       const words = scene.text.trim().split(/\s+/).slice(0, 3).join(" ");
       return `
-    <section id="scene-${scene.scene}" class="clip scene scene-${index} ${styleClass}"
+    <section id="scene-${scene.scene}" class="clip scene scene-${index} ${styleClass} ${profileClass}"
       data-start="${start.toFixed(3)}" data-duration="${scene.duration.toFixed(3)}"
-      data-visual="${esc(scene.visual)}" style="--scene-bg:${sceneBg};">
+      data-visual="${esc(scene.visual)}" data-media-status="${esc(scene.media_status)}"
+      data-media-prompt="${esc(scene.media_prompt || scene.visual)}" style="--scene-bg:${sceneBg};">
       <div class="scene-glow"></div>
       <div class="scene-inner" data-anim="${esc(scene.animation || recipe.motion)}">
         <div class="topline"><span class="badge">${esc(recipe.name)}</span><span class="scene-count">${index + 1}/${spec.scenes.length}</span></div>
@@ -117,6 +120,16 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
     .cinematic-broll .headline { font-weight: 500; }
     .podcast-clip .scene-inner { border-bottom: 3px solid ${colors.accent}; padding-bottom: 40px; }
     .product-demo .emphasis { background: ${colors.accent}; color: ${colors.bg}; display: inline-block; padding: 12px 18px; border-radius: 12px; }
+    .profile-realistic .scene-glow { opacity: .5; filter: blur(18px); }
+    .profile-realistic .scene-inner { text-shadow: 0 3px 22px rgba(0,0,0,.45); }
+    .profile-three-dimensional .scene-inner { transform: perspective(900px) rotateX(2deg); }
+    .profile-three-dimensional .scene-glow { background: conic-gradient(from 120deg, ${colors.accent}, transparent 35%, ${colors.fg} 62%, transparent 80%); opacity: .25; }
+    .profile-cinematic::before, .profile-cinematic::after { content: ""; position: absolute; z-index: 4; left: 0; right: 0; height: 38px; background: #000; }
+    .profile-cinematic::before { top: 0; } .profile-cinematic::after { bottom: 0; }
+    .profile-animation .scene-glow { background: linear-gradient(135deg, ${colors.accent}, transparent 45%, ${colors.fg}); opacity: .27; }
+    .profile-cartoon .scene-inner { border-radius: 32px; border: 5px solid ${colors.fg}; padding: 34px; box-shadow: 12px 12px 0 ${colors.accent}; }
+    .profile-stick-figure .scene-inner { border: 3px dashed ${colors.fg}; padding: 34px; border-radius: 12px; }
+    .profile-stick-figure .visual-note::before { content: "\\25CB \\2572\\2502\\2571  "; color: ${colors.accent}; font-size: 38px; }
     .active .scene-inner { animation: ${styleClass}-enter .55s cubic-bezier(.2,.8,.2,1) both; }
     @keyframes kinetic-captions-enter { from { opacity: 0; transform: translateY(28px) scale(.98); } to { opacity: 1; transform: none; } }
     @keyframes pattern-interrupt-enter { from { opacity: 0; transform: translateX(-54px); } to { opacity: 1; transform: none; } }
@@ -132,7 +145,7 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
   </style>
 </head>
 <body>
-  <main id="root" data-composition-id="${esc(projectId)}" data-width="${width}" data-height="${height}" data-duration="${duration}" data-style="${styleClass}">
+  <main id="root" data-composition-id="${esc(projectId)}" data-width="${width}" data-height="${height}" data-duration="${duration}" data-style="${esc(spec.style_id)}" data-style-profile="${esc(spec.style_bible.profile)}" data-style-bible="${esc(JSON.stringify(spec.style_bible))}">
 ${scenesHtml}
   </main>
   <script>
@@ -196,7 +209,7 @@ async function inspectMedia(outputPath: string, spec: VisualSpec): Promise<Rende
     mime_type: parsed.format?.format_name ?? "unknown",
   };
   const expected = dimensions(spec.aspect);
-  if (metadata.width !== expected.width || metadata.height !== expected.height || metadata.duration_sec < Math.max(0.5, spec.duration - 0.75)) {
+  if (metadata.width !== expected.width || metadata.height !== expected.height || metadata.duration_sec < Math.max(0.5, spec.duration - 0.25) || metadata.duration_sec > spec.duration + 0.25) {
     throw new Error(`Rendered media metadata does not match spec: ${JSON.stringify({ metadata, expected, duration: spec.duration })}`);
   }
   return metadata;
@@ -212,6 +225,13 @@ export async function renderVisualSpec(jobId: string, spec: VisualSpec): Promise
   const indexPath = path.join(projectDir, "index.html");
   fs.writeFileSync(indexPath, html, "utf8");
   fs.writeFileSync(path.join(projectDir, "hyperframes.json"), JSON.stringify({ name: jobId, version: 1, duration: spec.duration }, null, 2));
+  fs.writeFileSync(path.join(projectDir, "media-prompts.json"), JSON.stringify({
+    job_id: jobId,
+    style_id: spec.style_id,
+    media_policy: "prompt-only",
+    style_bible: spec.style_bible,
+    scenes: spec.scenes.map((scene) => ({ scene: scene.scene, media_status: scene.media_status, media_prompt: scene.media_prompt })),
+  }, null, 2));
 
   const { command, prefix } = hyperframesCommand();
   let lintOk = true;

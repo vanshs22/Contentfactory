@@ -1,4 +1,4 @@
-# AI Content & Digital Asset Factory
+# AI Content & Digital Asset Factory# AI Content & Digital Asset Factory
 
 A production-minded Node/TypeScript content factory that turns one brief into researched, platform-aware short-form assets:
 
@@ -8,6 +8,10 @@ The application owns business logic. n8n is an optional scheduler/poller. HyperF
 
 ## Current implementation
 
+- User-supplied `style_prompt` accepts arbitrary directions such as realistic, 3D, cinematic, animation, cartoon, stick figure, or a custom visual language.
+- Every generated video gets one locked style bible, and every scene/frame prompt repeats its continuity rules so the style, character identity, camera language, lighting, palette, and rendering method stay consistent.
+- `video_duration_sec` enforces an exact duration from strategy through script, scenes, render metadata, and QC.
+- HyperFrames receives escaped style/media prompt metadata and writes a `media-prompts.json` sidecar. The current repository renders deterministic HTML/CSS motion graphics; a real image/video provider can consume those prompt contracts later without changing the style bible.
 - Director creates the requested `volume` of idempotent content jobs.
 - Specialized agents return Zod-validated research, strategy, hooks, scripts, visual specs, and QC scores.
 - Eleven trend-inspired recipes are available at `GET /styles`: kinetic captions, pattern interrupt, listicle countdown, bold stat, split screen, before/after, news alert, storytime, cinematic B-roll, podcast clip, and product demo.
@@ -56,11 +60,14 @@ curl -X POST http://localhost:3100/production/run \
     "audience": "US investors",
     "platforms": ["instagram", "tiktok", "youtube"],
     "content_goal": "growth",
-    "viral_style": "bold-stat",
+    "style_prompt": "cinematic photoreal 3D product film with warm gold lighting, one consistent hero object, slow dolly-in, subtle film grain",
+    "video_duration_sec": 10,
     "volume": 1,
     "brand": { "name": "Apex Estates", "voice": "premium, data-driven" }
   }'
 ```
+
+`style_prompt` is free-form; `video_duration_sec` is an exact integer from 1 to 120. The style bible is locked across all scenes and QC revisions. The current renderer creates deterministic HyperFrames motion graphics plus prompt metadata; add a real media-generation adapter to replace prompt-only scenes with generated footage while reusing the same bible.
 
 For external automation, prefer the asynchronous endpoints:
 
@@ -72,7 +79,7 @@ For external automation, prefer the asynchronous endpoints:
 ## CLI and checks
 
 ```bash
-npm run factory -- --niche "luxury real estate" --audience "US investors"
+npm run factory -- --niche "luxury real estate" --audience "US investors" --style_prompt "cinematic 3D product film with one consistent hero object" --video_duration_sec 10
 npm run doctor
 npm run lint
 npm test
@@ -97,10 +104,9 @@ Import `n8n/content-factory-workflow.json`. The export submits an asynchronous c
 src/agents/       Research, strategy, hooks, script, visual, QC
 src/core/         Director and job orchestration
 src/services/     LLM, HyperFrames renderer, Buffer adapter
-src/styles/       Versioned trend-inspired style catalog
+src/styles/        Catalog recipes and arbitrary style-bible/prompt handling
 src/api/          Express routes
 src/db/           Atomic single-node persistence adapter
-hyperframes/      Extension point for external HyperFrames assets
 n8n/              Scheduler/polling workflow export
 test/             Deterministic contract tests
 docs/PLAN.md      Build checklist, assumptions, and known gaps

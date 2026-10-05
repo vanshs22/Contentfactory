@@ -12,7 +12,8 @@ const SYSTEM = `You are the Quality Control Agent.
 Score a content package before publish. Scores are 0-100 integers.
 overall is the average of the eight dimensions.
 pass is true only if overall >= ${env.QC_MIN_SCORE} and technical_validity >= 90.
-Be strict on readability and hook strength for short-form vertical video.
+Be strict on readability, hook strength, and consistency for short-form vertical video.
+Verify every scene follows the same style_bible, media_status is intentionally prompt-only, and no scene silently changes character identity, palette, camera, lighting, or rendering method.
 Return only JSON.`;
 
 export async function runQC(

@@ -26,6 +26,31 @@ export const ViralStyleSchema = z.enum([
 ]);
 export type ViralStyleId = z.infer<typeof ViralStyleSchema>;
 
+export const StyleProfileSchema = z.enum([
+  "motion-graphics",
+  "realistic",
+  "three-dimensional",
+  "cinematic",
+  "animation",
+  "cartoon",
+  "stick-figure",
+  "custom",
+]);
+export type StyleProfile = z.infer<typeof StyleProfileSchema>;
+export const StyleIdSchema = z.union([ViralStyleSchema, z.literal("custom")]);
+export type StyleId = z.infer<typeof StyleIdSchema>;
+
+export const StyleBibleSchema = z.object({
+  source_prompt: z.string().trim().min(1).max(1000),
+  profile: StyleProfileSchema,
+  visual_rules: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
+  composition_rules: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
+  motion_rules: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
+  continuity_rules: z.array(z.string().trim().min(1).max(300)).min(1).max(12),
+  negative_prompt: z.string().trim().max(1000).optional(),
+});
+export type StyleBible = z.infer<typeof StyleBibleSchema>;
+
 export const CampaignInputSchema = z.object({
   goal: z.string().min(1),
   niche: z.string().min(1),
@@ -41,6 +66,8 @@ export const CampaignInputSchema = z.object({
     .default({}),
   content_goal: z.enum(["growth", "engagement", "conversion", "awareness"]).default("growth"),
   viral_style: ViralStyleSchema.optional(),
+  style_prompt: z.string().trim().min(1).max(1000).optional(),
+  video_duration_sec: z.number().int().min(1).max(120).default(30),
   volume: z.number().int().min(1).max(90).default(7),
   duration_days: z.number().int().min(1).max(90).default(7),
 });
@@ -107,9 +134,11 @@ export type ScriptResult = z.infer<typeof ScriptResultSchema>;
 
 export const SceneSpecSchema = z.object({
   scene: z.number(),
-  duration: z.number(),
-  purpose: z.string(),
-  visual: z.string(),
+  duration: z.number().positive(),
+  purpose: z.string().min(1),
+  visual: z.string().min(1),
+  media_prompt: z.string().min(1).max(2000).default("Scene media prompt"),
+  media_status: z.literal("prompt-only").default("prompt-only"),
   animation: z.string(),
   text: z.string(),
   emphasis: z.string().optional(),
@@ -119,7 +148,15 @@ export type SceneSpec = z.infer<typeof SceneSpecSchema>;
 
 export const VisualSpecSchema = z.object({
   template: z.string().min(1),
-  style_id: ViralStyleSchema.default("kinetic-captions"),
+  style_id: StyleIdSchema.default("kinetic-captions"),
+  style_bible: StyleBibleSchema.default({
+    source_prompt: "Deterministic short-form motion graphics",
+    profile: "motion-graphics",
+    visual_rules: ["High contrast readable typography"],
+    composition_rules: ["Keep the subject inside the mobile safe area"],
+    motion_rules: ["Use deliberate scene entrances"],
+    continuity_rules: ["Keep colors, camera language, and character identity unchanged"],
+  }),
   theme: z.string().min(1),
   duration: z.number(),
   aspect: z.enum(["9:16", "16:9", "1:1"]).default("9:16"),
@@ -213,7 +250,7 @@ export type AnalyticsMetric = z.infer<typeof AnalyticsMetricSchema> & { id: stri
 
 export interface LearningInsight {
   id: string;
-  style_id?: ViralStyleId;
+  style_id?: StyleId;
   platform?: Platform;
   statement: string;
   evidence: string;

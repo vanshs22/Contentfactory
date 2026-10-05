@@ -35,7 +35,7 @@ export async function createCampaign(raw: unknown): Promise<Campaign> {
       campaign_id: id,
       status: "pending",
       input,
-      selected_style: selectStyle(input).id,
+      selected_style: input.style_prompt ? "custom" : selectStyle(input).id,
       revision_count: 0,
       created_at: now(),
       updated_at: now(),
@@ -125,7 +125,7 @@ export async function runJob(jobId: string): Promise<ContentJob> {
 
       logger.info({ jobId, overall: qc.overall }, "QC failed — revising visual");
       job = jobs.update(jobId, { status: "revising", revision_count: job.revision_count + 1 });
-      visual = await runVisualDirector(job.input, strategy, script, qc.notes);
+      visual = await runVisualDirector(job.input, strategy, script, qc.notes, visual.style_bible);
       job = jobs.update(jobId, { visual, selected_style: visual.style_id });
     }
 
