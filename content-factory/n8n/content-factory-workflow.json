@@ -1,0 +1,57 @@
+{
+  "name": "Content Factory Async Production",
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "hours", "hoursInterval": 24 }] } },
+      "name": "Daily Schedule", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.1, "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST", "url": "={{ $env.CONTENT_FACTORY_URL }}/campaigns", "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={\n  \"goal\": \"Daily growth content\",\n  \"niche\": \"luxury real estate\",\n  \"audience\": \"US investors\",\n  \"platforms\": [\"instagram\", \"tiktok\", \"youtube\"],\n  \"content_goal\": \"growth\",\n  \"viral_style\": \"bold-stat\",\n  \"volume\": 1,\n  \"brand\": { \"name\": \"Apex Estates\", \"voice\": \"premium, data-driven\" }\n}",
+        "options": {}
+      },
+      "name": "Create Campaign", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [420, 300]
+    },
+    {
+      "parameters": { "method": "POST", "url": "={{ $env.CONTENT_FACTORY_URL }}/campaigns/{{ $json.id }}/run", "options": {} },
+      "name": "Start Campaign", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [660, 300]
+    },
+    {
+      "parameters": { "amount": 15, "unit": "seconds" },
+      "name": "Wait Before Poll", "type": "n8n-nodes-base.wait", "typeVersion": 1.1, "position": [880, 300]
+    },
+    {
+      "parameters": { "method": "GET", "url": "={{ $env.CONTENT_FACTORY_URL }}/campaigns/{{ $json.campaign_id || $json.id }}", "options": {} },
+      "name": "Poll Campaign", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [1100, 300]
+    },
+    {
+      "parameters": { "conditions": { "string": [{ "value1": "={{ $json.status }}", "operation": "equals", "value2": "completed" }] } },
+      "name": "Completed?", "type": "n8n-nodes-base.if", "typeVersion": 1, "position": [1320, 300]
+    },
+    {
+      "parameters": { "conditions": { "string": [{ "value1": "={{ $json.status }}", "operation": "equals", "value2": "failed" }] } },
+      "name": "Failed?", "type": "n8n-nodes-base.if", "typeVersion": 1, "position": [1540, 420]
+    },
+    {
+      "parameters": { "jsCode": "return [{ json: { ok: true, message: 'Content campaign completed', campaign_id: $json.id, jobs: $json.jobs } }];" },
+      "name": "Success", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1540, 220]
+    },
+    {
+      "parameters": { "jsCode": "throw new Error(`Content campaign failed: ${JSON.stringify($json)}`);" },
+      "name": "Failure", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [1760, 420]
+    }
+  ],
+  "connections": {
+    "Daily Schedule": { "main": [[{ "node": "Create Campaign", "type": "main", "index": 0 }]] },
+    "Create Campaign": { "main": [[{ "node": "Start Campaign", "type": "main", "index": 0 }]] },
+    "Start Campaign": { "main": [[{ "node": "Wait Before Poll", "type": "main", "index": 0 }]] },
+    "Wait Before Poll": { "main": [[{ "node": "Poll Campaign", "type": "main", "index": 0 }]] },
+    "Poll Campaign": { "main": [[{ "node": "Completed?", "type": "main", "index": 0 }]] },
+    "Completed?": { "main": [[{ "node": "Success", "type": "main", "index": 0 }], [{ "node": "Failed?", "type": "main", "index": 0 }]] },
+    "Failed?": { "main": [[{ "node": "Failure", "type": "main", "index": 0 }], [{ "node": "Wait Before Poll", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "2"
+}
