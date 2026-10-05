@@ -87,7 +87,11 @@ test("composition maps style, brand colors, timing, and safe escaped text", () =
   assert.match(html, /data-duration="6"/);
   assert.match(html, /kinetic-captions/);
   assert.match(html, /Stop &lt;scrolling&gt;/);
-  assert.match(html, /window\.__renderAt/);
+  assert.match(html, /data-track-index="0"/);
+  assert.match(html, /vendor\/gsap\.min\.js/);
+  assert.match(html, /gsap\.timeline\(\{ paused: true \}/);
+  assert.match(html, /window\.__timelines\[/);
+  assert.doesNotMatch(html, /window\.__renderAt/);
   assert.match(html, /scene-illustration/);
   assert.match(html, /data-illustration-kind="abstract"/);
   assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);

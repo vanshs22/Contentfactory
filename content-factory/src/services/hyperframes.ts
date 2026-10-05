@@ -102,7 +102,7 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
       const words = scene.text.trim().split(/\s+/).slice(0, 3).join(" ");
       return `
     <section id="scene-${scene.scene}" class="clip scene scene-${index} ${styleClass} ${profileClass}"
-      data-start="${start.toFixed(3)}" data-duration="${scene.duration.toFixed(3)}"
+      data-start="${start.toFixed(3)}" data-duration="${scene.duration.toFixed(3)}" data-track-index="0"
       data-visual="${esc(scene.visual)}" data-media-status="${esc(scene.media_status)}"
       data-media-prompt="${esc(scene.media_prompt || scene.visual)}" style="--scene-bg:${sceneBg};">
       <div class="scene-glow"></div>
@@ -130,12 +130,12 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { margin: 0; background: #000; overflow: hidden; }
     #root { position: relative; width: ${width}px; height: ${height}px; overflow: hidden; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; background: ${colors.bg}; color: ${colors.fg}; }
-    .clip { position: absolute; inset: 0; display: grid; place-items: center; padding: 76px 64px 110px; overflow: hidden; opacity: 0; background: var(--scene-bg); }
-    .scene-inner { position: relative; z-index: 2; width: 100%; max-width: 930px; text-align: left; transform: translateY(22px); }
+    .clip { position: absolute; inset: 0; display: grid; place-items: center; padding: 76px 64px 110px; overflow: hidden; background: var(--scene-bg); }
+    .scene-inner { position: relative; z-index: 2; width: 100%; max-width: 930px; text-align: left; }
     .scene-glow { position: absolute; inset: -20%; z-index: 0; opacity: .32; background: radial-gradient(circle at 75% 30%, ${colors.accent} 0, transparent 32%), radial-gradient(circle at 10% 85%, ${colors.fg} 0, transparent 24%); filter: blur(2px); }
     .scene-media { position: absolute; inset: 0; z-index: 1; opacity: .96; pointer-events: none; }
     .scene-illustration { display: block; width: 100%; height: 100%; }
-    .scene-inner { position: relative; z-index: 2; width: 100%; max-width: 930px; text-align: left; transform: translateY(22px); }
+    .scene-inner { position: relative; z-index: 2; width: 100%; max-width: 930px; text-align: left; }
     .kinetic-captions .headline { text-transform: none; }
     .kinetic-captions .headline::first-letter { color: ${colors.accent}; }
     .pattern-interrupt .scene-inner { border-left: 12px solid ${colors.accent}; padding-left: 38px; }
@@ -153,7 +153,7 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
     .product-demo .emphasis { background: ${colors.accent}; color: ${colors.bg}; display: inline-block; padding: 12px 18px; border-radius: 12px; }
     .profile-realistic .scene-glow { opacity: .5; filter: blur(18px); }
     .profile-realistic .scene-inner { text-shadow: 0 3px 22px rgba(0,0,0,.45); }
-    .profile-three-dimensional .scene-inner { transform: perspective(900px) rotateX(2deg); }
+    .profile-three-dimensional .scene-media { perspective: 900px; }
     .profile-three-dimensional .scene-glow { background: conic-gradient(from 120deg, ${colors.accent}, transparent 35%, ${colors.fg} 62%, transparent 80%); opacity: .25; }
     .profile-cinematic::before, .profile-cinematic::after { content: ""; position: absolute; z-index: 4; left: 0; right: 0; height: 38px; background: #000; }
     .profile-cinematic::before { top: 0; } .profile-cinematic::after { bottom: 0; }
@@ -161,7 +161,6 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
     .profile-cartoon .scene-inner { border-radius: 32px; border: 5px solid ${colors.fg}; padding: 34px; box-shadow: 12px 12px 0 ${colors.accent}; }
     .profile-stick-figure .scene-inner { border: 3px dashed ${colors.fg}; padding: 34px; border-radius: 12px; }
     .profile-stick-figure .visual-note::before { content: "\\25CB \\2572\\2502\\2571  "; color: ${colors.accent}; font-size: 38px; }
-    .active .scene-inner { opacity: 1; transform: none; animation: none; }
     @keyframes kinetic-captions-enter { from { opacity: 0; transform: translateY(28px) scale(.98); } to { opacity: 1; transform: none; } }
     @keyframes pattern-interrupt-enter { from { opacity: 0; transform: translateX(-54px); } to { opacity: 1; transform: none; } }
     @keyframes listicle-countdown-enter { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: none; } }
@@ -179,24 +178,23 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
   <main id="root" data-composition-id="${esc(projectId)}" data-width="${width}" data-height="${height}" data-duration="${duration}" data-style="${esc(spec.style_id)}" data-style-profile="${esc(spec.style_bible.profile)}" data-style-bible="${esc(JSON.stringify(spec.style_bible))}">
 ${scenesHtml}
   </main>
+  <script src="./vendor/gsap.min.js"></script>
   <script>
     (() => {
       const root = document.getElementById("root");
+      const timeline = gsap.timeline({ paused: true });
+      gsap.ticker.lagSmoothing(0);
       const scenes = Array.from(root.querySelectorAll(".scene"));
-      const total = Number(root.dataset.duration || 1);
-      function renderAt(seconds) {
-        const t = Math.max(0, Math.min(total - 0.001, Number(seconds) || 0));
-        scenes.forEach((scene) => {
-          const start = Number(scene.dataset.start || 0);
-          const end = start + Number(scene.dataset.duration || 0);
-          scene.classList.toggle("active", t >= start && t < end);
-          scene.style.opacity = t >= start && t < end ? "1" : "0";
-        });
-      }
-      window.__renderAt = renderAt;
+      scenes.forEach((scene) => {
+        const start = Number(scene.getAttribute("data-start") || 0);
+        const inner = scene.querySelector(".scene-inner");
+        const media = scene.querySelector(".scene-media");
+        if (inner) timeline.fromTo(inner, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, start);
+        if (media) timeline.fromTo(media, { opacity: 0.45, scale: 1.06 }, { opacity: 0.96, scale: 1, duration: 0.9, ease: "power2.out" }, start);
+      });
+      timeline.to({}, { duration: ${duration}, ease: "none" }, 0);
       window.__timelines = window.__timelines || {};
-      window.__timelines[root.dataset.compositionId] = { seek: renderAt, progress: (value) => renderAt(Number(value) * total) };
-      renderAt(0);
+      window.__timelines[${JSON.stringify(projectId)}] = timeline;
     })();
   </script>
 </body>
@@ -251,11 +249,24 @@ export async function renderVisualSpec(jobId: string, spec: VisualSpec): Promise
   const rendersDir = path.join(env.STORAGE_ROOT, "renders");
   fs.mkdirSync(projectDir, { recursive: true });
   fs.mkdirSync(rendersDir, { recursive: true });
+  const vendorDir = path.join(projectDir, "vendor");
+  fs.mkdirSync(vendorDir, { recursive: true });
+  const gsapSource = path.join(ROOT_DIR, "node_modules", "gsap", "dist", "gsap.min.js");
+  if (!fs.existsSync(gsapSource)) throw new Error(`Local GSAP bundle missing: ${gsapSource}`);
+  fs.copyFileSync(gsapSource, path.join(vendorDir, "gsap.min.js"));
 
   const html = buildCompositionHtml(spec, jobId);
   const indexPath = path.join(projectDir, "index.html");
   fs.writeFileSync(indexPath, html, "utf8");
-  fs.writeFileSync(path.join(projectDir, "hyperframes.json"), JSON.stringify({ name: jobId, version: 1, duration: spec.duration }, null, 2));
+  const renderDimensions = dimensions(spec.aspect);
+  fs.writeFileSync(path.join(projectDir, "hyperframes.json"), JSON.stringify({
+    name: jobId,
+    version: 1,
+    width: renderDimensions.width,
+    height: renderDimensions.height,
+    fps: env.RENDER_FPS,
+    duration: spec.duration,
+  }, null, 2));
   fs.writeFileSync(path.join(projectDir, "media-prompts.json"), JSON.stringify({
     job_id: jobId,
     style_id: spec.style_id,

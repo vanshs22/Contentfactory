@@ -13,11 +13,14 @@
     "test": "NODE_ENV=test node --import tsx --test test/*.test.ts",
     "doctor": "tsx src/cli/doctor.ts"
   },
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "gsap": "^3.15.0",
     "openai": "^4.77.0",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",

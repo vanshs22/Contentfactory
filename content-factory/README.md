@@ -11,6 +11,7 @@ The application owns business logic. n8n is an optional scheduler/poller. HyperF
 - User-supplied `style_prompt` accepts arbitrary directions such as realistic, 3D, cinematic, animation, cartoon, stick figure, or a custom visual language.
 - Every generated video gets one locked style bible, and every scene/frame prompt repeats its continuity rules so the style, character identity, camera language, lighting, palette, and rendering method stay consistent.
 - `video_duration_sec` enforces an exact duration from strategy through script, scenes, render metadata, and QC.
+- HyperFrames compositions follow the official contract: timed `clip` elements, `data-track-index`, a project-local GSAP bundle, one paused seekable timeline, and framework-owned frame visibility.
 - HyperFrames receives escaped style/media prompt metadata, renders actual inline SVG scene artwork selected from the prompt (including the consistent house illustration in this sample), and writes a `media-prompts.json` sidecar. A real media-generation provider can replace the deterministic SVG layer later without changing the style bible.
 - Director creates the requested `volume` of idempotent content jobs.
 - Specialized agents return Zod-validated research, strategy, hooks, scripts, visual specs, and QC scores.
