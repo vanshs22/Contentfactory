@@ -11,7 +11,7 @@ The application owns business logic. n8n is an optional scheduler/poller. HyperF
 - User-supplied `style_prompt` accepts arbitrary directions such as realistic, 3D, cinematic, animation, cartoon, stick figure, or a custom visual language.
 - Every generated video gets one locked style bible, and every scene/frame prompt repeats its continuity rules so the style, character identity, camera language, lighting, palette, and rendering method stay consistent.
 - `video_duration_sec` enforces an exact duration from strategy through script, scenes, render metadata, and QC.
-- HyperFrames receives escaped style/media prompt metadata and writes a `media-prompts.json` sidecar. The current repository renders deterministic HTML/CSS motion graphics; a real image/video provider can consume those prompt contracts later without changing the style bible.
+- HyperFrames receives escaped style/media prompt metadata, renders actual inline SVG scene artwork selected from the prompt (including the consistent house illustration in this sample), and writes a `media-prompts.json` sidecar. A real media-generation provider can replace the deterministic SVG layer later without changing the style bible.
 - Director creates the requested `volume` of idempotent content jobs.
 - Specialized agents return Zod-validated research, strategy, hooks, scripts, visual specs, and QC scores.
 - Eleven trend-inspired recipes are available at `GET /styles`: kinetic captions, pattern interrupt, listicle countdown, bold stat, split screen, before/after, news alert, storytime, cinematic B-roll, podcast clip, and product demo.
@@ -67,7 +67,7 @@ curl -X POST http://localhost:3100/production/run \
   }'
 ```
 
-`style_prompt` is free-form; `video_duration_sec` is an exact integer from 1 to 120. The style bible is locked across all scenes and QC revisions. The current renderer creates deterministic HyperFrames motion graphics plus prompt metadata; add a real media-generation adapter to replace prompt-only scenes with generated footage while reusing the same bible.
+`style_prompt` is free-form; `video_duration_sec` is an exact integer from 1 to 120. The style bible is locked across all scenes and QC revisions. The current renderer creates deterministic HyperFrames HTML/CSS plus inline SVG scene artwork and prompt metadata; add a real media-generation adapter to replace the SVG layer with generated footage while reusing the same bible.
 
 For external automation, prefer the asynchronous endpoints:
 

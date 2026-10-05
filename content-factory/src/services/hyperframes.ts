@@ -41,6 +41,42 @@ function dimensions(aspect: VisualSpec["aspect"]): { width: number; height: numb
   return { width: 1080, height: 1920 };
 }
 
+function illustrationKind(scene: VisualSpec["scenes"][number]): "house" | "robot" | "person" | "stick" | "chart" | "product" | "abstract" {
+  const text = `${scene.visual} ${scene.media_prompt}`.toLowerCase();
+  if (/house|property|real estate|building|architecture/.test(text)) return "house";
+  if (/robot|android|machine/.test(text)) return "robot";
+  if (/stick[- ]?figure|stickman|doodle/.test(text)) return "stick";
+  if (/person|people|human|founder|investor/.test(text)) return "person";
+  if (/chart|graph|stat|data|metric/.test(text)) return "chart";
+  if (/product|phone|device|app|package/.test(text)) return "product";
+  return "abstract";
+}
+
+function sceneVisualMarkup(scene: VisualSpec["scenes"][number], index: number, colors: { bg: string; fg: string; accent: string }, profile: string): string {
+  const kind = illustrationKind(scene);
+  const id = `visual-${index}`;
+  const label = esc(scene.visual);
+  const sky = profile === "cartoon" || profile === "animation" ? colors.accent : colors.bg;
+  const house = `<g class="house-art" transform="translate(${index * 9} 0)" filter="url(#${id}-shadow)">
+    <path d="M190 1060 L540 720 L890 1060 Z" fill="${colors.accent}" opacity=".94"/>
+    <rect x="260" y="1000" width="560" height="390" rx="10" fill="${colors.fg}" opacity=".96"/>
+    <rect x="330" y="1090" width="120" height="170" rx="5" fill="${colors.bg}"/>
+    <rect x="630" y="1090" width="120" height="170" rx="5" fill="${colors.bg}"/>
+    <rect x="485" y="1170" width="105" height="220" rx="7" fill="${colors.accent}"/>
+    <path d="M260 1000 H820" stroke="${colors.accent}" stroke-width="18"/>
+    <path d="M300 1400 H780" stroke="${colors.fg}" stroke-width="20" opacity=".65"/>
+    <circle cx="300" cy="1340" r="62" fill="${colors.accent}" opacity=".8"/><circle cx="780" cy="1340" r="62" fill="${colors.accent}" opacity=".8"/>
+  </g>`;
+  const robot = `<g class="robot-art" transform="translate(540 1030)" stroke="${colors.fg}" stroke-width="24" fill="none" stroke-linecap="round"><rect x="-150" y="-180" width="300" height="240" rx="54" fill="${colors.accent}"/><circle cx="-55" cy="-70" r="18" fill="${colors.fg}"/><circle cx="55" cy="-70" r="18" fill="${colors.fg}"/><path d="M-55 0 Q0 40 55 0 M0-180 V-250 M-25-250 H25 M-150 0 L-250 120 M150 0 L250 120 M-80 60 V300 M80 60 V300"/></g>`;
+  const person = `<g class="person-art" transform="translate(540 1040)" stroke="${colors.fg}" stroke-width="28" fill="none" stroke-linecap="round"><circle cy="-210" r="86" fill="${colors.accent}"/><path d="M0-120 V210 M-170 20 H170 M0 210 L-130 390 M0 210 L130 390"/></g>`;
+  const stick = `<g class="stick-art" transform="translate(540 1050)" stroke="${colors.fg}" stroke-width="24" fill="none" stroke-linecap="round"><circle cy="-220" r="78" fill="${colors.accent}"/><path d="M0-140 V160 M-150-20 H150 M0 160 L-125 360 M0 160 L125 360"/></g>`;
+  const chart = `<g class="chart-art" transform="translate(180 760)"><path d="M0 520 H720 M0 520 V0" stroke="${colors.fg}" stroke-width="18"/><rect x="90" y="300" width="120" height="220" fill="${colors.accent}"/><rect x="300" y="210" width="120" height="310" fill="${colors.accent}" opacity=".8"/><rect x="510" y="60" width="120" height="460" fill="${colors.fg}"/></g>`;
+  const product = `<g class="product-art" transform="translate(540 1020) rotate(-7)" filter="url(#${id}-shadow)"><rect x="-220" y="-320" width="440" height="650" rx="55" fill="${colors.fg}"/><rect x="-185" y="-250" width="370" height="470" rx="28" fill="${colors.bg}"/><circle cx="0" cy="265" r="22" fill="${colors.accent}"/></g>`;
+  const abstract = `<g class="abstract-art"><circle cx="540" cy="950" r="310" fill="${colors.accent}" opacity=".55"/><circle cx="700" cy="760" r="180" fill="${colors.fg}" opacity=".3"/><path d="M100 1420 Q540 760 980 1420" stroke="${colors.accent}" stroke-width="28" fill="none"/></g>`;
+  const art = kind === "house" ? house : kind === "robot" ? robot : kind === "person" ? person : kind === "stick" ? stick : kind === "chart" ? chart : kind === "product" ? product : abstract;
+  return `<div class="scene-media profile-${esc(profile)}" data-illustration-kind="${kind}"><svg class="scene-illustration" viewBox="0 0 1080 1920" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${id}-sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${sky}"/><stop offset="1" stop-color="${colors.bg}"/></linearGradient><linearGradient id="${id}-veil" x1="0" y1="0" x2="0" y2="1"><stop stop-color="${colors.bg}" stop-opacity=".08"/><stop offset=".68" stop-color="${colors.bg}" stop-opacity=".78"/><stop offset="1" stop-color="${colors.bg}" stop-opacity=".96"/></linearGradient><filter id="${id}-shadow"><feDropShadow dx="0" dy="26" stdDeviation="20" flood-color="#000" flood-opacity=".5"/></filter></defs><rect width="1080" height="1920" fill="url(#${id}-sky)"/><circle cx="820" cy="360" r="150" fill="${colors.accent}" opacity=".3"/><path d="M0 1420 Q300 1250 540 1400 T1080 1340 V1920 H0Z" fill="${colors.bg}" opacity=".9"/>${art}<rect width="1080" height="1920" fill="url(#${id}-veil)"/></svg></div>`;
+}
+
 /** Build a deterministic, style-aware HyperFrames composition from validated VisualSpec. */
 export function buildCompositionHtml(spec: VisualSpec, projectId: string): string {
   const catalogStyleId = spec.style_id === "custom" ? "kinetic-captions" : spec.style_id;
@@ -70,6 +106,7 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
       data-visual="${esc(scene.visual)}" data-media-status="${esc(scene.media_status)}"
       data-media-prompt="${esc(scene.media_prompt || scene.visual)}" style="--scene-bg:${sceneBg};">
       <div class="scene-glow"></div>
+      ${sceneVisualMarkup(scene, index, colors, spec.style_bible.profile)}
       <div class="scene-inner" data-anim="${esc(scene.animation || recipe.motion)}">
         <div class="topline"><span class="badge">${esc(recipe.name)}</span><span class="scene-count">${index + 1}/${spec.scenes.length}</span></div>
         <p class="label">${esc(scene.purpose)}</p>
@@ -96,15 +133,9 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
     .clip { position: absolute; inset: 0; display: grid; place-items: center; padding: 76px 64px 110px; overflow: hidden; opacity: 0; background: var(--scene-bg); }
     .scene-inner { position: relative; z-index: 2; width: 100%; max-width: 930px; text-align: left; transform: translateY(22px); }
     .scene-glow { position: absolute; inset: -20%; z-index: 0; opacity: .32; background: radial-gradient(circle at 75% 30%, ${colors.accent} 0, transparent 32%), radial-gradient(circle at 10% 85%, ${colors.fg} 0, transparent 24%); filter: blur(2px); }
-    .topline { display: flex; justify-content: space-between; align-items: center; color: ${colors.muted}; margin-bottom: 54px; font-size: 20px; letter-spacing: .08em; text-transform: uppercase; }
-    .badge { color: ${colors.accent}; font-weight: 800; }
-    .scene-count { opacity: .7; }
-    .label { color: ${colors.muted}; font-size: 24px; line-height: 1.25; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 26px; max-width: 780px; }
-    .headline { font-size: clamp(54px, 7vw, 92px); font-weight: 850; line-height: .98; letter-spacing: -.045em; max-width: 920px; text-wrap: balance; }
-    .emphasis { color: ${colors.accent}; font-size: 42px; font-weight: 800; margin-top: 34px; line-height: 1.05; }
-    .visual-note { color: ${colors.muted}; opacity: .75; font-size: 20px; margin-top: 54px; }
-    .progress { position: absolute; z-index: 3; left: 64px; right: 64px; bottom: 66px; height: 8px; background: color-mix(in srgb, ${colors.fg} 18%, transparent); border-radius: 8px; overflow: hidden; }
-    .progress span { display: block; height: 100%; background: ${colors.accent}; border-radius: inherit; }
+    .scene-media { position: absolute; inset: 0; z-index: 1; opacity: .96; pointer-events: none; }
+    .scene-illustration { display: block; width: 100%; height: 100%; }
+    .scene-inner { position: relative; z-index: 2; width: 100%; max-width: 930px; text-align: left; transform: translateY(22px); }
     .kinetic-captions .headline { text-transform: none; }
     .kinetic-captions .headline::first-letter { color: ${colors.accent}; }
     .pattern-interrupt .scene-inner { border-left: 12px solid ${colors.accent}; padding-left: 38px; }
