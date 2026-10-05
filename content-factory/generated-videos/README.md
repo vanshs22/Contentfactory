@@ -5,3 +5,7 @@ The rendered MP4 in this folder is a 10-second vertical HyperFrames sample gener
 ## `proper-hyperframes-media-10s.mp4`
 
 This is the higher-quality real-media sample: three timed `<video class="clip">` layers, local GSAP paused timeline, deterministic frame seeking, overlays, grain, typography, and a 10-second 1080x1920 MP4. The source footage is from the public [HyperFrames Launch Video example repository](https://github.com/heygen-com/hyperframes-launch-video), used here as a real media demonstration rather than an AI-generated Wan/Higgsfield clip.
+
+## `character-hyperframes-10s.mp4`
+
+Character-led sample with two consistent illustrated characters, Nova and Pixel. It uses four timed scenes, animated poses, an idea card, a celebration mark, typography, and a paused GSAP timeline rendered frame-by-frame by HyperFrames.
