@@ -88,5 +88,6 @@ test("composition maps style, brand colors, timing, and safe escaped text", () =
   assert.match(html, /kinetic-captions/);
   assert.match(html, /Stop &lt;scrolling&gt;/);
   assert.match(html, /window\.__renderAt/);
+  assert.match(html, /\.active \.scene-inner \{ opacity: 1/);
   assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);
 });

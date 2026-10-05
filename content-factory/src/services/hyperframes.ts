@@ -130,7 +130,7 @@ export function buildCompositionHtml(spec: VisualSpec, projectId: string): strin
     .profile-cartoon .scene-inner { border-radius: 32px; border: 5px solid ${colors.fg}; padding: 34px; box-shadow: 12px 12px 0 ${colors.accent}; }
     .profile-stick-figure .scene-inner { border: 3px dashed ${colors.fg}; padding: 34px; border-radius: 12px; }
     .profile-stick-figure .visual-note::before { content: "\\25CB \\2572\\2502\\2571  "; color: ${colors.accent}; font-size: 38px; }
-    .active .scene-inner { animation: ${styleClass}-enter .55s cubic-bezier(.2,.8,.2,1) both; }
+    .active .scene-inner { opacity: 1; transform: none; animation: none; }
     @keyframes kinetic-captions-enter { from { opacity: 0; transform: translateY(28px) scale(.98); } to { opacity: 1; transform: none; } }
     @keyframes pattern-interrupt-enter { from { opacity: 0; transform: translateX(-54px); } to { opacity: 1; transform: none; } }
     @keyframes listicle-countdown-enter { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: none; } }
